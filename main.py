@@ -1,5 +1,4 @@
 from sys import exit
-#  from dataclasses import dataclass
 from typing import Callable, Union, List
 from argparse import ArgumentParser
 
@@ -17,7 +16,26 @@ def cute_exit(func: Callable) -> Callable:
 exit = cute_exit(exit)
 
 
-class Config:
+class Freezer:
+
+    _frozen = False
+
+    def __init__(self):
+        self._frozen = True
+
+    def __delattr__(self, *args, **kwargs):
+        if self._frozen:
+            raise AttributeError('This object is frozen!')
+        object.__delattr__(self, *args, **kwargs)
+
+    def __setattr__(self, *args, **kwargs):
+        if self._frozen:
+            raise AttributeError('This object is frozen!')
+        object.__setattr__(self, *args, **kwargs)
+
+
+class Config(Freezer):
+
     def __init__(self):
         self.yesno = {"y", "n", "abort"}
         self.separator = "%^"
@@ -26,13 +44,15 @@ class Config:
             description="small password manager",
             epilog="Use at your own risk")
         parser.add_argument("mode", nargs="?", default="r")
-        parser.add_argument("storagefile", nargs="?", default="p.txt")
+        parser.add_argument("storagefile", nargs="?", default="passwords.txt")
         args = parser.parse_args()
         self.mode = args.mode
         self.filename = args.storagefile
+        super().__init__()
 
 
-class StorageFile:
+class StorageFile(Freezer):
+
     def __init__(self, file: str):
         self.filename = file
         contents = self.get_pure_contents()
@@ -44,7 +64,8 @@ class StorageFile:
                     length[index] = current_len
         print(self.filename, "with", len(contents) - 1, "entries is opened")
         self.column_length = length
-    
+        super().__init__()
+
     def get_pure_contents(self) -> list:
         with open(self.filename, mode="r", encoding="utf8") as stream:
             contents = list(map(lambda x: x.rstrip(), stream.readlines()))
@@ -62,13 +83,16 @@ class StorageFile:
         stream = open(self.filename, mode="a", encoding="utf8")
         stream.write(new_line)
         stream.close()
-        
-class StatusMessage:
+
+
+class StatusMessage(Freezer):
+
     def __init__(self, event: str, value: int = None, error: Exception = None):
         self.event = event
         self.value = value
         self.error = error
-    
+        super().__init__()
+
     def __repr__(self) -> str:
         event = self.event
         if event == "written":
@@ -78,10 +102,16 @@ class StatusMessage:
         elif event == "no_entries":
             return "No entries found"
         elif event == "entries_deleted":
+            if self.value is None:
+                raise AttributeError
             return f"{self.value} entries deleted"
 
 
-class ProvideOutput:
+class ProvideOutput(Freezer):
+
+    def __init__(self):
+        super().__init__()
+
     @staticmethod
     def make_column_output(line       : List[Union[str, str, str]],
                            col_lengths: List[Union[int, int, int]]) -> str:
@@ -151,7 +181,6 @@ def main():
                 exit()
         try:
             file.append("%^".join(form))
-            form = ProvideOutput.encode_strings(form)
             print(StatusMessage("written"))
         except FileNotFoundError as error:
             print(StatusMessage("no_written", error=error))
