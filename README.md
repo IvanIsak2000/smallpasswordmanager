@@ -1,9 +1,9 @@
 # smallpasswordmanager
 
-## Table of commands for using the program:
+## table of commands:
 
-| Command                   	| Description              	|
+| command                   	| description              	|
 |---------------------------	|--------------------------	|
-| ``` python3 main.py a ``` 	| Append password          	|
-| ``` python3 main.py b ``` 	| Delete password          	|
-| ``` python3 main.py r ``` 	| Read passwords (default) 	|
+| ``` python3 main.py a ``` 	| append password          	|
+| ``` python3 main.py b ``` 	| delete password          	|
+| ``` python3 main.py r ``` 	| read passwords (default) 	|
